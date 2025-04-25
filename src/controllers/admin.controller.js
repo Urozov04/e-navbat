@@ -3,6 +3,8 @@ import { catchError } from '../utils/error-response.js';
 import { adminValidator } from '../utils/admin.validation.js';
 import { decode, encode } from '../utils/bcrypt-encrypt.js';
 import { generateAccessToken, generateRefreshToken } from '../utils/generate-token.js';
+import jwt from 'jsonwebtoken';
+import { transporter } from '../utils/mailer.js';
 
 export class AdminController {
     async createSuperAdmin(req, res) {
@@ -70,6 +72,20 @@ export class AdminController {
                 secure: true,
                 maxAge: 30 * 24 * 60 * 60 * 1000
             });
+            const mailMessage = {
+                from: process.env.SMTP_USER,
+                to: 'dilshod7861@gmail.com',
+                subject: 'Full stack N20',
+                text: 'Danggg',
+            };
+            transporter.sendMail(mailMessage, function(err, info){
+                if (err){
+                    console.log(`Error on sending to mail: ${err}`)
+                    catchError(res, 400, err);
+                }else{
+                    console.log(info);
+                }
+            });
             return res.status(200).json({
                 statusCode: 200,
                 message: 'success',
@@ -77,6 +93,49 @@ export class AdminController {
             });
         } catch (error) {
             catchError(res, 500, error.message);
+        }
+    }
+
+    async accessToken(req, res) {
+        try {
+            const refreshToken = req.cookies.refreshToken;
+            if (!refreshToken) {
+                catchError(res, 401, 'Refresh token not found');
+            }
+            const decodedToken = jwt.verify(refreshToken, process.env.REFRESH_TOKEN_KEY);
+            if (!decodedToken) {
+                catchError(res, 401, 'Refresh token expired');
+            }
+            const payload = { id: decodedToken.id, role: decodedToken.role };
+            const accessToken = generateAccessToken(payload);
+            return res.status(200).json({
+                statusCode: 200,
+                message: 'success',
+                data: accessToken
+            });
+        } catch (error) {
+            catchError(res, 500, error.message);
+        }
+    }
+
+    async signoutAdmin(req, res) {
+        try {
+            const refreshToken = req.cookies.refreshToken;
+            if (!refreshToken) {
+                catchError(res, 401, 'Refresh token not found');
+            }
+            const decodedToken = jwt.verify(refreshToken, process.env.REFRESH_TOKEN_KEY);
+            if (!decodedToken) {
+                catchError(res, 401, 'Refresh token expired');
+            }
+            res.clearCookie('refreshToken');
+            return res.status(200).json({
+                statusCode: 200,
+                message: 'success',
+                data: {}
+            });
+        } catch (error) {
+            catchError(res, 500, error);
         }
     }
 
@@ -95,7 +154,7 @@ export class AdminController {
 
     async getAdminById(req, res) {
         try {
-            const admin = await this.findById(req.params.id);
+            const admin = await AdminController.findById(req.params.id);
             return res.status(200).json({
                 statusCode: 200,
                 message: 'success',
@@ -137,7 +196,7 @@ export class AdminController {
         }
     }
 
-    async findById(id) {
+    static async findById(id) {
         try {
             const admin = await Admin.findById(id);
             if (!admin) {
