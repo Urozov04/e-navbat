@@ -1,6 +1,9 @@
+import logger from './logger/logger.js';
+
 export const catchError = (res, code, err) => {
-    return res.status(code).json({
-        statusCode: code,
-        message: err
-    });
-}
+  logger.error(`Danggg: ${err}`);
+  return res.status(code).json({
+    statusCode: code,
+    message: err,
+  });
+};
