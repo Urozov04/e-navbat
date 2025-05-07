@@ -25,7 +25,7 @@ export class AdminController {
       if (checkSuperAdmin) {
         return catchError(res, 409, 'superadmin already exist');
       }
-      const hashedPassword = await decode(password, 7);
+      const hashedPassword = await encode(password, 7);
       const newSuperAdmin = await Admin.create({
         username,
         hashedPassword,
@@ -52,7 +52,7 @@ export class AdminController {
       if (existUsername) {
         return catchError(res, 409, 'Username already exist');
       }
-      const hashedPassword = await decode(password, 7);
+      const hashedPassword = await encode(password, 7);
       const newAdmin = await Admin.create({
         username,
         hashedPassword,
@@ -109,18 +109,31 @@ export class AdminController {
   async updateAdminById(req, res) {
     try {
       const id = req.params.id;
-      await AdminController.findById(res, id);
+      const admin = await AdminController.findById(res, id);
       if (req.body.username) {
         const existUsername = await Admin.findOne({
           username: req.body.username,
         });
+
+        if (existUsername && id != existUsername._id) {
+          return catchError(res, 409, 'Username already exists');
+        }
       }
-      if (existUsername && id != existUsername._id) {
-        return catchError(res, 409, 'Username already exists');
+      let hashedPassword = admin.hashedPassword;
+      if (req.body.password) {
+        hashedPassword = encode(req.body.password, 7);
+        delete req.body.password;
       }
-      const updateAdmin = await Admin.findByIdAndUpdate(id, req.body, {
-        new: true,
-      });
+      const updateAdmin = await Admin.findByIdAndUpdate(
+        id,
+        {
+          ...req.body,
+          hashedPassword,
+        },
+        {
+          new: true,
+        }
+      );
       return res.status(200).json({
         statuscode: 200,
         message: 'succes',
@@ -156,7 +169,7 @@ export class AdminController {
       if (!admin) {
         return catchError(res, 404, 'admin not found');
       }
-      const ismatchPassword = await encode(password, admin.hashedPassword);
+      const ismatchPassword = await decode(password, admin.hashedPassword);
       if (!ismatchPassword) {
         return catchError(res, 400, 'invalid password');
       }

@@ -15,7 +15,7 @@ router
   .post('/signout', controller.signoutDoctor)
   .get('/', controller.getAllDoctors)
   .get('/:id', controller.getDoctorById)
-  .patch('/:id',JwtAuthGuard, SelfGuard, controller.updateDoctorById)
+  .patch('/:id', JwtAuthGuard, SelfGuard, controller.updateDoctorById)
   .delete('/:id', JwtAuthGuard, AdminGuard, controller.deleteDoctorById);
 
 export default router;

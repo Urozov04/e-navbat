@@ -68,77 +68,77 @@ export class DoctorController {
       const payload = { id: doctor._id, is_doctor: true };
       const acceessToken = generateAccessToken(payload);
       const refreshToken = generateRefreshToken(payload);
-      refTokenwriteCookie(res, "refreshTokenDoctor", refreshToken);
+      refTokenwriteCookie(res, 'refreshTokenDoctor', refreshToken);
       return res.status(200).json({
         statusCode: 200,
-        message: "success",
-        data: acceessToken
-      })
+        message: 'success',
+        data: acceessToken,
+      });
     } catch (error) {
       return catchError(res, 500, error.message);
     }
   }
 
   async signoutDoctor(req, res) {
-      try {
-        const refreshToken = req.cookies.refreshTokenDoctor;
-        if (!refreshToken) {
-          return catchError(res, 401, 'refresh token doctor not found');
-        }
-        const decodedToken = jwt.verify(
-          refreshToken,
-          process.env.REFRESH_TOKEN_KEY
-        );
-        if (!decodedToken) {
-          return catchError(res, 401, 'refresh token doctor expired');
-        }
-        res.clearCookie('refreshToken');
-        return res.status(200).json({
-          statusCode: 200,
-          message: 'success',
-          data: {},
-        });
-      } catch (error) {
-        return catchError(res, 500, error);
-      }
-  }
-  
-  async acceessToken(req, res) {
-      accessToken;
-      try {
-        const refreshToken = req.cookies.refreshTokenDoctor;
-        if (!refreshToken) {
-          return catchError(res, 401, 'refresh token doctor not found');
-        }
-        const decodedToken = jwt.verify(
-          refreshToken,
-          process.env.REFRESH_TOKEN_KEY
-        );
-        if (!decodedToken) {
-          return catchError(res, 401, 'refresh token doctor expired');
-        }
-        const payload = { id: decodedToken.id, role: decodedToken.role };
-        const accessToken = generateAccessToken(payload);
-        return res.status(200).json({
-          statusCode: 200,
-          message: 'success',
-          data: accessToken,
-        });
-      } catch (error) {
-        return catchError(res, 500, error.message);
-      }
-  }
-
-  async getAllDoctors (_, res){
     try {
-      const doctors = await Doctor.find();
+      const refreshToken = req.cookies.refreshTokenDoctor;
+      if (!refreshToken) {
+        return catchError(res, 401, 'refresh token doctor not found');
+      }
+      const decodedToken = jwt.verify(
+        refreshToken,
+        process.env.REFRESH_TOKEN_KEY
+      );
+      if (!decodedToken) {
+        return catchError(res, 401, 'refresh token doctor expired');
+      }
+      res.clearCookie('refreshToken');
       return res.status(200).json({
         statusCode: 200,
-        message: "success",
-        data: doctors
+        message: 'success',
+        data: {},
       });
     } catch (error) {
-      return catchError(res, 500, error.message)
+      return catchError(res, 500, error);
+    }
+  }
+
+  async acceessToken(req, res) {
+    accessToken;
+    try {
+      const refreshToken = req.cookies.refreshTokenDoctor;
+      if (!refreshToken) {
+        return catchError(res, 401, 'refresh token doctor not found');
+      }
+      const decodedToken = jwt.verify(
+        refreshToken,
+        process.env.REFRESH_TOKEN_KEY
+      );
+      if (!decodedToken) {
+        return catchError(res, 401, 'refresh token doctor expired');
+      }
+      const payload = { id: decodedToken.id, is_doctor: true };
+      const accessToken = generateAccessToken(payload);
+      return res.status(200).json({
+        statusCode: 200,
+        message: 'success',
+        data: accessToken,
+      });
+    } catch (error) {
+      return catchError(res, 500, error.message);
+    }
+  }
+
+  async getAllDoctors(_, res) {
+    try {
+      const doctors = await Doctor.find().populate('graphs');
+      return res.status(200).json({
+        statusCode: 200,
+        message: 'success',
+        data: doctors,
+      });
+    } catch (error) {
+      return catchError(res, 500, error.message);
     }
   }
 
@@ -147,19 +147,19 @@ export class DoctorController {
       const doctor = await DoctorController.findDoctorById(res, req.params.id);
       return res.status(200).json({
         statusCode: 200,
-        message: "success",
-        data: doctor
-      })
+        message: 'success',
+        data: doctor,
+      });
     } catch (error) {
-      return catchError(res, 500, error.message)
+      return catchError(res, 500, error.message);
     }
   }
 
-    async updateDoctorById(req, res) {
+  async updateDoctorById(req, res) {
     try {
       const id = req.params.id;
       await DoctorController.findDoctorById(res, id);
-      if (req.body.phoneNumber) { 
+      if (req.body.phoneNumber) {
         const existUsername = await Doctor.findOne({
           phoneNumber: req.body.phoneNumber,
         });
@@ -184,7 +184,7 @@ export class DoctorController {
     try {
       const id = req.params.id;
       await DoctorController.findDoctorById(res, id);
-      await Doctor.findByIdAndDelete(id)
+      await Doctor.findByIdAndDelete(id);
       return res.status(200).json({
         statuscode: 200,
         message: 'succes',
@@ -195,15 +195,15 @@ export class DoctorController {
     }
   }
 
-  static async findDoctorById(res, id){
+  static async findDoctorById(res, id) {
     try {
-      const doctor = await Doctor.findById(id);
-      if(!doctor) {
+      const doctor = await Doctor.findById(id).populate('graphs');
+      if (!doctor) {
         return catchError(res, 404, `Doctor not found by ID ${id}`);
       }
       return doctor;
     } catch (error) {
-      return catchError(res, 500, error.message)
+      return catchError(res, 500, error.message);
     }
   }
 }

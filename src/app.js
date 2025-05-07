@@ -2,9 +2,12 @@ import express from 'express';
 import { config } from 'dotenv';
 import { connectDB } from './db/index.js';
 import adminRouter from './routes/admin.routes.js';
+import doctorRouter from './routes/doctor.routes.js';
+import graphRouter from './routes/graph.routes.js';
+import patientRouter from "./routes/patient.routes.js"
+import appointmentRouter from "./routes/appointment.routes.js"
 import cookieParser from 'cookie-parser';
 import logger from './utils/logger/logger.js';
-import doctorRouter from './routes/doctor.routes.js';
 config();
 
 const app = express();
@@ -15,7 +18,10 @@ app.use(cookieParser());
 await connectDB();
 
 app.use('/admin', adminRouter);
-app.use("/doctor", doctorRouter);
+app.use('/doctor', doctorRouter);
+app.use('/graph', graphRouter);
+app.use("/patient", patientRouter)
+app.use("/appointment", appointmentRouter)
 
 process.on('uncaughtException', (err) => {
   if (err) {
@@ -34,7 +40,7 @@ app.use((err, res, req, next) => {
       .status(500)
       .json({ error: err.message || 'Internal server error' });
   } else {
-    next();
+    return next();
   }
 });
 

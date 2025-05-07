@@ -6,7 +6,7 @@ export const SuperAdminGuard = (req, res, next) => {
     if (user.role != 'superadmin') {
       return catchError(res, 403, 'Forbidden user');
     }
-    next();
+    return next();
   } catch (error) {
     return catchError(res, 500, error.message);
   }

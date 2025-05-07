@@ -4,7 +4,7 @@ export const SelfGuard = (req, res, next) => {
   try {
     const user = req?.user;
     if (user.role === 'superadmin' || user.id == req.params?.id) {
-      next();
+      return next();
     } else {
       return catchError(res, 403, 'Forbidden user');
     }
